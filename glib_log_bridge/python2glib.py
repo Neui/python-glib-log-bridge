@@ -1,12 +1,12 @@
 import logging
 import uuid
-from typing import Any, Dict, Optional
-from collections.abc import Callable
+from typing import Any, Dict, Optional, Callable
+# from collections.abc import Callable
 import gi
 from gi.repository import GLib
 
 
-gi.require_version('GLib', '2.50')
+logger = logging.getLogger(__name__)
 
 
 class PythonToGLibLoggerHandler(logging.Handler):
@@ -79,13 +79,17 @@ class PythonToGLibLoggerHandler(logging.Handler):
     def _convert_fields_dict(self, d: Dict[str, Any]
                              ) -> Dict[str, GLib.Variant]:
         """Convert(/modify) a dictionary of the fields into GLib Variants"""
-        for key, value in d:
+        for key, value in d.items():
             if isinstance(value, GLib.Variant):
                 continue  # Already converted, ignore
             elif isinstance(value, bytes):
                 d[key] = GLib.Variant('ay', value)
             else:
-                d[key] = GLib.Variant('s', str(value))
+                s = str(value)
+                if '\x00' in s:
+                    logger.warn("Found 0-byte in string, will be cut off: %r",
+                                s)
+                d[key] = GLib.Variant('s', s)
         return d
 
     def emit(self, record: logging.LogRecord):

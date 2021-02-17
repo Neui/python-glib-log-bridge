@@ -87,7 +87,6 @@ class GLibToPythonLogger:
 
     def _get_log_level(self, fields: dict, log_level: GLib.LogLevelFlags,
                        default=logging.INFO) -> int:
-        # log_level is GLib.LogLevelFlags
         priority = fields.get('PRIORITY', None)
         if priority is not None and self.use_priority_field:
             if priority in self._log_level_priority_map:
@@ -114,7 +113,7 @@ class GLibToPythonLogger:
                          path_name,
                          line_no,
                          message,
-                         None, # args
+                         None,  # args
                          None,  # exc_info
                          func_name,
                          None  # sinfo/traceback
