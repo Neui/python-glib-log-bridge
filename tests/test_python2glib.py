@@ -22,20 +22,15 @@ def queueLogWriterFunc(log_level: GLib.LogLevelFlags,
     return GLib.LogWriterOutput.HANDLED
 
 
-GLib.log_set_writer_func(queueLogWriterFunc, None)
-
-
 class Python2GLibTest(unittest.TestCase):
     handler = None
 
     def setUp(self):
-        # GLib.log_set_writer_func(queueLogWriterFunc, None)
-        pass
+        GLib.log_set_writer_func(queueLogWriterFunc, None)
 
     def tearDown(self):
         if self.handler is not None:
             logger.removeHandler(self.handler)
-        pass
 
     @given(strategies.text(alphabet=strategies.characters(
         blacklist_categories=('C'), blacklist_characters='\x00'),
