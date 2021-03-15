@@ -74,6 +74,10 @@ class PythonToGLibLoggerHandler(logging.Handler):
             fields['PYTHON_EXCEPTION'] = type_name
             fields['PYTHON_EXCEPTION_MESSAGE'] = str(exc)
 
+        if hasattr(record, 'glib_fields'):
+            if isinstance(record.glib_fields, dict):
+                fields.update(record.glib_fields)
+
         return fields
 
     def _convert_fields_dict(self, d: Dict[str, Any]
