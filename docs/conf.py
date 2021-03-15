@@ -12,9 +12,10 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../glib_log_bridge'))
+sys.path.insert(0, os.path.abspath('..'))
 
 
 # -- Project information -----------------------------------------------------
@@ -41,6 +42,7 @@ release = ''
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
 ]
 
@@ -181,4 +183,21 @@ epub_exclude_files = ['search.html']
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}
+intersphinx_mapping = {
+    'https://docs.python.org/3': None,
+    'glib': ('http://lazka.github.io/pgi-docs/GLib-2.0', None),
+}
+
+autodoc_mock_imports = []
+try:
+    import gi
+except ImportError:
+    autodoc_mock_imports.append('gi')
+
+autodoc_typehints = 'description'
+autodoc_default_options = {
+    # 'members': '__all__',
+    'undoc-members': True,
+    'special-members': '__init__',
+    # 'inherited-members': True,
+}

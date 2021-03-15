@@ -1,15 +1,13 @@
-.. Python GLib Log Bridge documentation master file, created by
-   sphinx-quickstart on Mon Mar 15 02:39:49 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Welcome to Python GLib Log Bridge's documentation!
-==================================================
+Python GLib Log Bridge documentation
+====================================
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :caption: Table of Contents:
 
+   getting_started
+   api
+
+To be written: An introduction. What is this?
 
 
 Indices and tables
