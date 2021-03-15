@@ -25,14 +25,13 @@ class GLibToPythonLogger:
         fields: Dict[str, Union[str, bytes]] = {}
         for field in logfields:
             if field.length == 0:
-                continue  # Ignore
+                value: Union[str, bytes] = b''
             elif field.length == -1:
                 raw_value = ctypes.c_char_p(field.value).value
                 if raw_value is None:
                     continue  # Ignore
                 try:
-                    value: Union[str, bytes] = \
-                        raw_value.decode(errors="strict")
+                    value = raw_value.decode(errors="strict")
                 except UnicodeError:
                     value = raw_value  # Keep value as bytes object
             else:
