@@ -115,9 +115,15 @@ _GLib_LogWriterFunc = Callable[[GLib.LogLevelFlags, GLib.LogField, Any],
                                GLib.LogWriterOutput]
 
 
-class PythonToGLibWriter1Handler(PythonToGLibLoggerHandler):
+class PythonToGLibWriterHandler(PythonToGLibLoggerHandler):
     """
-    Python logger handler that directly forwards to an glib logger writer.
+    Python logger handler that directly forwards to an glib logger writer
+    function. Example: PythonToGLibWriterHandler(GLib.log_writer_default)
+
+    Note that there are pre-existing instances at:
+    - pythonToGLibWriterDefault (with GLib.log_writer_default)
+    - pythonToGLibWriterStandardStreams (with GLib.log_writer_standard_streams)
+    - pythonToGLibWriterJournald (with GLib.log_writer_journald)
     """
     def __init__(self, writer: _GLib_LogWriterFunc,
                  user_data: Any = None,
@@ -155,50 +161,6 @@ class PythonToGLibWriter1Handler(PythonToGLibLoggerHandler):
         ret = self.writer(log_level, fields, self.user_data)
         return ret
 
-
-class PythonToGLibWriter2Handler(PythonToGLibLoggerHandler):
-    """
-    Python logger handler that directly forwards to an glib logger writer.
-    """
-    def __init__(self, writer: _GLib_LogWriterFunc, level=logging.NOTSET,
-                 register: bool = True, **kwargs):
-        super().__init__(level)
-        self.writer: _GLib_LogWriterFunc = writer
-        self.log_domain: str = 'PYTHON' + str(uuid.uuid4().int)
-        self.handler_id: Optional[int] = None
-        if register:
-            self.register()
-
-    def unregister(self):
-        if self.handler_id is not None:
-            GLib.log_remove_handler(self.log_domain, self.handler_id)
-        self.handler_id = None
-
-    def register(self):
-        self.unregister()
-        self.handler_id = GLib.log_set_handler(self.log_domain,
-                                               self.log_levels,
-                                               self.writer,
-                                               self.user_data)
-
-    def reregister(self):
-        self.unregister()
-        self.register()
-
-    def __del__(self):
-        self.unregister()
-
-    def _get_log_domain(self, record: logging.LogRecord) -> str:
-        return self.log_domain
-
-    # def emit(self, record):
-    #     log_level = self._level_to_glib(record.levelno)
-    #     fields = self._convert_fields(record)
-    #     ret = self.writer(log_level, fields, self.user_data)
-    #     return ret == GLib.LogWriterOutput.HANDLED
-
-
-PythonToGLibWriterHandler = PythonToGLibWriter1Handler
 
 """Forward to GLib.log_writer_default"""
 pythonToGLibWriterDefault = \
