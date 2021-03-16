@@ -66,6 +66,19 @@ class Python2GLibTest(unittest.TestCase):
         finally:
             logger.removeHandler(self.handler)
 
+    def test_exception_fields(self):
+        self.handler = p2g.PythonToGLibLoggerHandler()
+        logger.addHandler(self.handler)
+        try:
+            raise SyntaxError("Some Exception Msg")
+        except SyntaxError:
+            logger.exception("Oh what?")
+            rec = q.get(timeout=1)
+            self.assertEqual("builtins.SyntaxError", rec['PYTHON_EXC'])
+            self.assertEqual("Some Exception Msg", rec['PYTHON_EXC_MESSAGE'])
+        finally:
+            logger.removeHandler(self.handler)
+
 
 if __name__ == '__main__':
     unittest.main()

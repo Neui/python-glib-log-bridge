@@ -29,8 +29,9 @@ class PythonToGLibLoggerHandler(logging.Handler):
         self.log_domain_suffix = log_domain_suffix
 
     _level_to_glib_map: Dict[int, GLib.LogLevelFlags] = {
-        logging.CRITICAL: GLib.LogLevelFlags.LEVEL_CRITICAL,
-        logging.ERROR: GLib.LogLevelFlags.LEVEL_ERROR,
+        # Don't use the GLib equivalent because glib then likes to terminate.
+        logging.CRITICAL: GLib.LogLevelFlags.LEVEL_WARNING,
+        logging.ERROR: GLib.LogLevelFlags.LEVEL_WARNING,
         logging.WARNING: GLib.LogLevelFlags.LEVEL_WARNING,
         logging.INFO: GLib.LogLevelFlags.LEVEL_INFO,
         logging.DEBUG: GLib.LogLevelFlags.LEVEL_DEBUG,
@@ -71,8 +72,8 @@ class PythonToGLibLoggerHandler(logging.Handler):
             if exc_type is None:
                 exc_type = type(exc)
             type_name = exc_type.__module__ + '.' + exc_type.__qualname__
-            fields['PYTHON_EXCEPTION'] = type_name
-            fields['PYTHON_EXCEPTION_MESSAGE'] = str(exc)
+            fields['PYTHON_EXC'] = type_name
+            fields['PYTHON_EXC_MESSAGE'] = str(exc)
 
         if hasattr(record, 'glib_fields'):
             if isinstance(getattr(record, 'glib_fields', None), dict):
