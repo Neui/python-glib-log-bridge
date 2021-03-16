@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import Any, Dict, Optional, Callable
+from typing import Any, Dict, Optional, Callable, List
 # from collections.abc import Callable
 import gi
 from gi.repository import GLib
@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 class PythonToGLibLoggerHandler(logging.Handler):
     """
     Python logger handle that just forwards message records to the GLib logger.
+
+    Note that since this subclasses :py:class:`logging.Handler`, view
+    their documentation for more information, such as filters and so on.
     """
 
     replace_module_char: str = '-'
@@ -76,7 +79,7 @@ class PythonToGLibLoggerHandler(logging.Handler):
             + self.log_domain_suffix
 
     def _get_fields(self, record: logging.LogRecord,
-                    update_from_record: bool = True) -> Dict[str, Any]:
+                    **kwargs) -> Dict[str, Any]:
         """
         Return fields to use based on the given log record.
 
@@ -123,9 +126,10 @@ class PythonToGLibLoggerHandler(logging.Handler):
             fields['PYTHON_EXC'] = type_name
             fields['PYTHON_EXC_MESSAGE'] = str(exc)
 
-        if hasattr(record, 'glib_fields') and update_from_record:
-            if isinstance(getattr(record, 'glib_fields', None), dict):
-                fields.update(getattr(record, 'glib_fields', {}))
+        if kwargs.get('update_from_record', True) and \
+                hasattr(record, 'glib_fields') and \
+                isinstance(getattr(record, 'glib_fields', None), dict):
+            fields.update(getattr(record, 'glib_fields', {}))
 
         return fields
 
@@ -194,6 +198,9 @@ class PythonToGLibWriterHandler(PythonToGLibLoggerHandler):
     - :py:data:`pythonToGLibWriterDefault` (uses :py:func:`GLib.log_writer_default`)
     - :py:data:`pythonToGLibWriterStandardStreams` (uses :py:func:`GLib.log_writer_standard_streams`)
     - :py:data:`pythonToGLibWriterJournald` (uses :py:func:`GLib.log_writer_journald`)
+
+    Note that since this subclasses :py:class:`logging.Handler`, view
+    their documentation for more information, such as filters and so on.
     """
     def __init__(self, writer: _GLib_LogWriterFunc,
                  user_data: Any = None,
@@ -203,12 +210,14 @@ class PythonToGLibWriterHandler(PythonToGLibLoggerHandler):
         self.writer: _GLib_LogWriterFunc = writer
         self.user_data: Any = user_data
 
-    def _get_fields(self, record):
-        fields = super()._get_fields(record)
-        fields['GLIB_DOMAIN'] = self._get_log_domain()
+    def _get_fields(self, record: logging.LogRecord,
+                    **kwargs) -> Dict[str, Any]:
+        fields = super()._get_fields(record, **kwargs)
+        if 'GLIB_DOMAIN' not in fields:
+            fields['GLIB_DOMAIN'] = self._get_log_domain(record)
         return fields
 
-    def _convert_fields(self, d):
+    def _convert_fields(self, d: Dict[str, Any]) -> List[GLib.LogField]:
         """
         Convert a record fields to an array of :py:class:`GLib.LogField`.
         """
@@ -222,7 +231,7 @@ class PythonToGLibWriterHandler(PythonToGLibLoggerHandler):
             fields.append(field)
         return fields
 
-    def _get_logfields(self, record):
+    def _get_logfields(self, record: logging.LogRecord) -> List[GLib.LogField]:
         return self._convert_fields(self._get_fields(record))
 
     def emit(self, record):
