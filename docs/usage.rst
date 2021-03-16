@@ -1,5 +1,5 @@
-Getting Started
-===============
+Usage
+=====
 
 To be written.
 

@@ -4,15 +4,17 @@ Python GLib Log Bridge documentation
 .. toctree::
    :caption: Table of Contents:
 
-   getting_started
+   usage
    api
-
-To be written: An introduction. What is this?
-
-
-Indices and tables
-==================
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. _README file:
+
+README file
+===========
+
+.. mdinclude:: ../README.md
+

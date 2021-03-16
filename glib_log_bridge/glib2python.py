@@ -119,7 +119,7 @@ class GLibToPythonLogger:
                          None,  # exc_info
                          func_name,
                          None,  # sinfo/traceback
-                         glib_fields = fields
+                         glib_fields=fields
                          )
         return record
 

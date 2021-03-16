@@ -108,13 +108,6 @@ class PythonToGLibLoggerHandler(logging.Handler):
         GLib.log_variant(log_domain, log_level, fields)
 
 
-# How to use:
-# import logging
-# logger = logging.getLogger()  # Logger to apply, this does for all messages
-# handler = PythonToGLibLoggerHandler()
-# logger.addHandler(handler)
-
-
 _GLib_LogWriterFunc = Callable[[GLib.LogLevelFlags, GLib.LogField, Any],
                                GLib.LogWriterOutput]
 
