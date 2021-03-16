@@ -45,6 +45,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'm2r2',
+    'sphinx_autodoc_typehints',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -195,6 +196,7 @@ try:
 except ImportError:
     autodoc_mock_imports.append('gi')
 
+autodoc_content = 'both'
 autodoc_preserve_defaults = True
 autodoc_typehints = 'description'
 autodoc_default_options = {
@@ -203,3 +205,5 @@ autodoc_default_options = {
     'special-members': '__init__',
     # 'inherited-members': True,
 }
+
+always_document_param_types = True
