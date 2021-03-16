@@ -195,6 +195,7 @@ try:
 except ImportError:
     autodoc_mock_imports.append('gi')
 
+autodoc_preserve_defaults = True
 autodoc_typehints = 'description'
 autodoc_default_options = {
     # 'members': '__all__',

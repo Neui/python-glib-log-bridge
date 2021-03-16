@@ -11,13 +11,18 @@ logger = logging.getLogger(__name__)
 
 class PythonToGLibLoggerHandler(logging.Handler):
     """
-    Python logger handle that just forwards message records to the glib logger.
+    Python logger handle that just forwards message records to the GLib logger.
     """
-    replace_module_char: str = '-'
-    log_domain_prefix: str = ''
-    log_domain_suffix: str = ''
 
-    """An python logger handler that forwards to the GLib logging system"""
+    replace_module_char: str = '-'
+    """
+    What to replace the dots (logger namespace separator) with when converting.
+    """
+    log_domain_prefix: str = ''
+    """What it should put before the converted logger name."""
+    log_domain_suffix: str = ''
+    """What it should put after the converted logger name."""
+
     def __init__(self, level=logging.NOTSET,
                  replace_module_char: str = replace_module_char,
                  log_domain_prefix: str = log_domain_prefix,
@@ -37,24 +42,67 @@ class PythonToGLibLoggerHandler(logging.Handler):
         logging.DEBUG: GLib.LogLevelFlags.LEVEL_DEBUG,
         # Not used: GLib.LogLevelFlags.LEVEL_MESSAGE
     }
+    """
+    Map used to convert from a Python logger level to the GLib Log Level.
+    """
 
     def _level_to_glib(self, level: int,
                        default: GLib.LogLevelFlags =
                        GLib.LogLevelFlags.LEVEL_DEBUG) -> GLib.LogLevelFlags:
-        """Converts python loglevel to a GLib log level"""
+        """
+        Converts a Python loglevel to a GLib log level.
+        If no mapping exists, use the specified default value.
+
+        The default implementation will use the
+        :py:data:`PythonToGLibLoggerHandler._level_to_glib_map`
+        map.
+        """
         for key in sorted(self._level_to_glib_map, reverse=True):
             if level >= key:
                 return self._level_to_glib_map[key]
         return default
 
     def _get_log_domain(self, record: logging.LogRecord) -> str:
-        """Returns the log domain for the specified record"""
+        """
+        Returns the log domain for the specified record.
+        The default implementation takes
+        :py:data:`PythonToGLibLoggerHandler.log_domain_prefix`
+        and
+        :py:data:`PythonToGLibLoggerHandler.log_domain_prefix`
+        into consideration.
+        """
         return self.log_domain_prefix \
             + record.name.replace('.', self.replace_module_char) \
             + self.log_domain_suffix
 
-    def _get_fields(self, record: logging.LogRecord) -> Dict[str, Any]:
-        """Return fields to use based on the given log record"""
+    def _get_fields(self, record: logging.LogRecord,
+                    update_from_record: bool = True) -> Dict[str, Any]:
+        """
+        Return fields to use based on the given log record.
+
+        The default implementation will insert the following keys:
+
+        * ``MESSAGE``: The formatted message
+        * ``CODE_FUNC``, ``CODE_FILE``, ``CODE_LINE``: Where it logged
+        * ``PYTHON_MESSAGE``: The unformatted message
+        * ``PYTHON_MODULE``: What module the log was emitted from
+        * ``PYTHON_LOGGER``: To what logger name it was supposed to log to
+        * ``PYTHON_TNAME``: Thread Name
+        * ``PYTHON_TID``: Thread ID
+
+        The default implementaion will also insert exception information:
+
+        * ``PYTHON_EXC``: Exception type with complete name
+        * ``PYTHON_EXC_MESSAGE``: Stringify exception message
+
+        Additionally, the default implementation will also insert (and
+        override) values from the ``glib_fields`` attribute of the record,
+        if it exists and is a :py:class:`dict`, when ``update_from_record``
+        is ``True`` (the default).
+
+        Subclasses can override this function to insert their own values
+        and such.
+        """
         fields = {
             'MESSAGE': self.format(record),
             'CODE_FUNC': record.funcName,
@@ -75,7 +123,7 @@ class PythonToGLibLoggerHandler(logging.Handler):
             fields['PYTHON_EXC'] = type_name
             fields['PYTHON_EXC_MESSAGE'] = str(exc)
 
-        if hasattr(record, 'glib_fields'):
+        if hasattr(record, 'glib_fields') and update_from_record:
             if isinstance(getattr(record, 'glib_fields', None), dict):
                 fields.update(getattr(record, 'glib_fields', {}))
 
@@ -83,8 +131,23 @@ class PythonToGLibLoggerHandler(logging.Handler):
 
     def _convert_fields_dict(self, d: Dict[str, Any]
                              ) -> Dict[str, GLib.Variant]:
-        """Convert(/modify) a dictionary of the fields into GLib Variants"""
+        """
+        Modifies a dictionary of the fields to convert their values into GLib
+        Variants, ready to be passed into :py:func:`GLib.log_variant`.
+
+        By default, existing :py:class:`GLib.Variant` objects are untouched,
+        strings are converted to :py:class:`Glib.Variant` strings,
+        and :py:class:`bytes` objects to :py:class:`Glib.Variant` bytes,
+        as per the official documentation.
+
+        For other objects :py:func:`str` is called and the resulting string
+        is inserted.
+
+        Note that strings containing an null-byte will be cut off for that
+        point. An warning will be emitted in that case.
+        """
         for key, value in d.items():
+            # TODO: What about keys that aren't strings?
             if isinstance(value, GLib.Variant):
                 continue  # Already converted, ignore
             elif isinstance(value, bytes):
@@ -98,6 +161,13 @@ class PythonToGLibLoggerHandler(logging.Handler):
         return d
 
     def emit(self, record: logging.LogRecord):
+        """
+        Log the specified record, by converting and forwarding it to the
+        GLib logging system.
+
+        Normally, you wouldn't use this directly but rather implicitly via
+        Pythons logging system.
+        """
         log_domain = self._get_log_domain(record)
         log_level = self._level_to_glib(record.levelno)
         fields_dict = self._get_fields(record)
@@ -121,9 +191,9 @@ class PythonToGLibWriterHandler(PythonToGLibLoggerHandler):
 
     Note that there are pre-existing instances at:
 
-    - :py:data:`pythonToGLibWriterDefault` (with :py:func:`GLib.log_writer_default`)
-    - :py:data:`pythonToGLibWriterStandardStreams` (with :py:func:`GLib.log_writer_standard_streams`)
-    - :py:data:`pythonToGLibWriterJournald` (with :py:func:`GLib.log_writer_journald`)
+    - :py:data:`pythonToGLibWriterDefault` (uses :py:func:`GLib.log_writer_default`)
+    - :py:data:`pythonToGLibWriterStandardStreams` (uses :py:func:`GLib.log_writer_standard_streams`)
+    - :py:data:`pythonToGLibWriterJournald` (uses :py:func:`GLib.log_writer_journald`)
     """
     def __init__(self, writer: _GLib_LogWriterFunc,
                  user_data: Any = None,
@@ -140,7 +210,7 @@ class PythonToGLibWriterHandler(PythonToGLibLoggerHandler):
 
     def _convert_fields(self, d):
         """
-        Convert a record fields to an array of :py:class:`GLib.LogField`
+        Convert a record fields to an array of :py:class:`GLib.LogField`.
         """
         fields = []
         for key, value in d:
@@ -156,20 +226,34 @@ class PythonToGLibWriterHandler(PythonToGLibLoggerHandler):
         return self._convert_fields(self._get_fields(record))
 
     def emit(self, record):
+        """
+        Log the specified record, by converting and forwarding it to the
+        specified GLib Log Writer Function.
+
+        Normally, you wouldn't use this directly but rather implicitly via
+        Pythons logging system.
+        """
         log_level = self._level_to_glib(record.levelno)
         fields = self._get_logfields(record)
         ret = self.writer(log_level, fields, self.user_data)
         return ret
 
 
-"""Forward to :py:func:`GLib.log_writer_default`"""
 pythonToGLibWriterDefault = \
     PythonToGLibWriterHandler(GLib.log_writer_default)
+"""
+Python Logger Handler to forward to :py:func:`GLib.log_writer_default`.
+"""
 
-"""Forward to :py:func:`GLib.log_writer_standard_streams`"""
 pythonToGLibWriterStandardStreams = \
     PythonToGLibWriterHandler(GLib.log_writer_standard_streams)
+"""
+Python Logger Handler to forward to
+:py:func:`GLib.log_writer_standard_streams`.
+"""
 
-"""Forward to :py:func:`GLib.log_writer_journald`"""
 pythonToGLibWriterJournald = \
     PythonToGLibWriterHandler(GLib.log_writer_journald)
+"""
+Python Logger Handler to forward to :py:func:`GLib.log_writer_journald`.
+"""
