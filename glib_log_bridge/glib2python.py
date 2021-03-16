@@ -24,7 +24,9 @@ class GLibToPythonLogger:
                         ) -> Dict[str, Union[str, bytes]]:
         fields: Dict[str, Union[str, bytes]] = {}
         for field in logfields:
-            if field.length == 0:
+            if field.value == 0 or field.length == 0:
+                # field.value == 0 should be impossible, but
+                # lets rather be safe
                 value: Union[str, bytes] = b''
             elif field.length == -1:
                 raw_value = ctypes.c_char_p(field.value).value
@@ -116,9 +118,9 @@ class GLibToPythonLogger:
                          None,  # args
                          None,  # exc_info
                          func_name,
-                         None  # sinfo/traceback
+                         None,  # sinfo/traceback
+                         glib_fields = fields
                          )
-        record.glib_fields = fields
         return record
 
     def glibToPythonLogFunc(self, log_domain: str,

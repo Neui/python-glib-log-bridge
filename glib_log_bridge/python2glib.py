@@ -75,8 +75,8 @@ class PythonToGLibLoggerHandler(logging.Handler):
             fields['PYTHON_EXCEPTION_MESSAGE'] = str(exc)
 
         if hasattr(record, 'glib_fields'):
-            if isinstance(record.glib_fields, dict):
-                fields.update(record.glib_fields)
+            if isinstance(getattr(record, 'glib_fields', None), dict):
+                fields.update(getattr(record, 'glib_fields', {}))
 
         return fields
 
@@ -100,6 +100,9 @@ class PythonToGLibLoggerHandler(logging.Handler):
         log_domain = self._get_log_domain(record)
         log_level = self._level_to_glib(record.levelno)
         fields_dict = self._get_fields(record)
+        if 'MESSAGE' not in fields_dict:
+            logger.error("Missing mandatory MESSAGE, possible crash ahead: %r",
+                         fields_dict)
         fields = GLib.Variant('a{sv}', self._convert_fields_dict(fields_dict))
         GLib.log_variant(log_domain, log_level, fields)
 
