@@ -63,8 +63,8 @@ class PythonToGLibLoggerHandler(logging.Handler):
             'PYTHON_MESSAGE': record.getMessage(),
             'PYTHON_MODULE': record.module,
             'PYTHON_LOGGER': record.name,
-            'PYTHON_THREADNAME': record.threadName,
-            'TID': record.thread,  # TODO test
+            'PYTHON_TNAME': record.threadName,
+            'PYTHON_TID': record.thread,
         }
 
         if record.exc_info is not None:
