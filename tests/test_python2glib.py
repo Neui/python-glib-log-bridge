@@ -45,6 +45,27 @@ class Python2GLibTest(unittest.TestCase):
         finally:
             logger.removeHandler(self.handler)
 
+    def test_custom_fields(self):
+        self.handler = p2g.PythonToGLibLoggerHandler()
+        logger.addHandler(self.handler)
+        try:
+            o = queue.Queue()
+            logger.info("test message", extra={
+                'glib_fields': {
+                    'text': 'test',
+                    'bytes': b'te\x00st',
+                    'object': o,
+                    'none': None,  # Passing NULL is impossible, so str is ued
+                }
+            })
+            rec = q.get(timeout=1)
+            self.assertEqual('test', rec['text'])
+            self.assertEqual(b'te\x00st', rec['bytes'])
+            self.assertEqual(str(o), rec['object'])
+            self.assertEqual(str(None), rec['none'])
+        finally:
+            logger.removeHandler(self.handler)
+
 
 if __name__ == '__main__':
     unittest.main()

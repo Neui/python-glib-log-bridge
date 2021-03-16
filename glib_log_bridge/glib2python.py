@@ -35,7 +35,8 @@ class GLibToPythonLogger:
                 except UnicodeError:
                     value = raw_value  # Keep value as bytes object
             else:
-                value = ctypes.c_byte * field.length
+                value = bytes((ctypes.c_byte * field.length)
+                              .from_address(field.value))
             fields[field.key] = value
         return fields
 
