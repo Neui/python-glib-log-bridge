@@ -14,13 +14,6 @@ q: queue.Queue = queue.Queue()
 qhandler = logging.handlers.QueueHandler(q)
 
 
-def g_log(logger_name, flags, message, fields=None):
-    f = {'MESSAGE': GLib.Variant('s', message)}
-    if fields is not None:
-        f.update(fields)
-    GLib.log_variant(logger_name, flags, GLib.Variant('a{sv}', f))
-
-
 class GLib2PythonWriterTest(unittest.TestCase):
 
     def setUp(self):
@@ -36,12 +29,18 @@ class GLib2PythonWriterTest(unittest.TestCase):
     def _register(self, l):
         GLib.log_set_writer_func(l.glibToPythonLogWriterFunc, None)
 
+    def _log(self, logger_name, flags, message, fields=None):
+        f = {'MESSAGE': GLib.Variant('s', message)}
+        if fields is not None:
+            f.update(fields)
+        GLib.log_variant(logger_name, flags, GLib.Variant('a{sv}', f))
+
     @given(strategies.text(alphabet=strategies.characters(
         blacklist_categories=('C'), blacklist_characters='\x00'),
         min_size=1))
     def test_basic(self, msg):
         self._register(g2p.GLibToPythonLogger())
-        g_log(LOGGER_NAME, GLib.LogLevelFlags.LEVEL_WARNING, msg)
+        self._log(LOGGER_NAME, GLib.LogLevelFlags.LEVEL_WARNING, msg)
         record = q.get(timeout=1)
         self.assertEqual(record.message, msg)
 
@@ -56,7 +55,7 @@ class GLib2PythonWriterTest(unittest.TestCase):
     def test_loglevels(self, m):
         self._register(g2p.GLibToPythonLogger())
         glib_level, logging_level = m
-        g_log(LOGGER_NAME, m[0], "some_message")
+        self._log(LOGGER_NAME, m[0], "some_message")
         self.assertEqual(m[1], q.get(timeout=1).levelno)
 
     @given(strategies.sampled_from([
@@ -69,7 +68,7 @@ class GLib2PythonWriterTest(unittest.TestCase):
     ]))
     def test_loglevels_priority(self, m):
         self._register(g2p.GLibToPythonLogger(use_priority_field=False))
-        g_log(LOGGER_NAME, m[0], "some_message")
+        self._log(LOGGER_NAME, m[0], "some_message")
         self.assertEqual(m[1], q.get(timeout=1).levelno)
 
     @given(strategies.lists(strategies.text(
@@ -84,7 +83,7 @@ class GLib2PythonWriterTest(unittest.TestCase):
                                    + domain.replace('-', '.'))
         lq = queue.Queue()
         logger.addHandler(logging.handlers.QueueHandler(lq))
-        g_log(LOGGER_NAME + '-' + domain, level, domain)
+        self._log(LOGGER_NAME + '-' + domain, level, domain)
         self.assertEqual(domain, lq.get(timeout=1).message)
         self.assertTrue(lq.empty())
 
@@ -104,7 +103,7 @@ class GLib2PythonWriterTest(unittest.TestCase):
         handler = logging.handlers.QueueHandler(lq)
         logger.addHandler(handler)
         try:
-            g_log(domain, level, domain)
+            self._log(domain, level, domain)
             self.assertEqual(domain, lq.get(timeout=1).message)
             self.assertTrue(lq.empty())
         finally:
@@ -115,18 +114,26 @@ class GLib2PythonWriterTest(unittest.TestCase):
 
     def test_invalid_message(self):
         self._register(g2p.GLibToPythonLogger())
-        g_log(LOGGER_NAME, GLib.LogLevelFlags.LEVEL_WARNING, '', fields={
+        self._log(LOGGER_NAME, GLib.LogLevelFlags.LEVEL_WARNING, '', fields={
             'MESSAGE': GLib.Variant('ay', b'\xFF')  # Not valid UTF-8
         })
         record = q.get(timeout=1)
         self.assertEqual(record.message, '\uFFFD')  # At least still a string
         self.assertTrue(q.empty())
 
-@unittest.skip("Doesn't work as expected yet...")
+
+@unittest.skip("No easy access to unstructured logging")
 class GLib2PythonHandlerTest(GLib2PythonWriterTest):
 
+    def _log(self, logger_name, flags, message, fields=None):
+        f = {'MESSAGE': GLib.Variant('s', message)}
+        if fields is not None:
+            f.update(fields)
+        GLib.log_variant(logger_name, flags, GLib.Variant('a{sv}', f))
+        # TODO: Change this to use unstrucuted logging functions
+
     def _register(self, l):
-        GLib.log_set_handler(LOGGER_NAME, GLib.LogLevelFlags.LEVEL_WARNING,
+        GLib.log_set_handler(LOGGER_NAME, GLib.LogLevelFlags.LEVEL_MASK,
                              l.glibToPythonLogFunc, None)
 
 

@@ -261,13 +261,18 @@ class GLibToPythonLogger:
                             log_level: GLib.LogLevelFlags,
                             message: str, user_data: Optional[Any]):
         """
-        The function GLib should call handling an entry.
+        The function GLib should call handling an entry the unstructured
+        way.
         Pass this to :py:func:`GLib.log_set_handler`.
-        NOTE: Not tested.
+        Note that the default handler forwards to the structured version
+        when one isn't registered, so please use
+        :py:func:`glibToPythonLogWriterFunc` instead.
         Example::
 
             GLib.log_set_handler("domain", GLib.LogLevelFlags.LEVEL_WARNING,
                                  obj.glibToPythonLogFunc, None)
+
+        WARNING: Not tested yet.
 
         :param log_domain: In what domain it was logged to.
         :param log_level: What log level is being used.
@@ -292,7 +297,8 @@ class GLibToPythonLogger:
                                   ) -> GLib.LogWriterOutput:
         """
         The function GLib should call when writing.
-        Pass this to :py:func:`GLib.log_set_writer_func`.
+        Pass this to :py:func:`GLib.log_set_writer_func`, which is used
+        when doing structured logging.
         Example::
 
             GLib.log_set_writer_func(obj.glibToPythonLogWriterFunc, None)
