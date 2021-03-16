@@ -63,6 +63,7 @@ class Python2GLibTest(unittest.TestCase):
             self.assertEqual(b'te\x00st', rec['bytes'])
             self.assertEqual(str(o), rec['object'])
             self.assertEqual(str(None), rec['none'])
+            self.assertTrue(q.empty())
         finally:
             logger.removeHandler(self.handler)
 
@@ -76,6 +77,7 @@ class Python2GLibTest(unittest.TestCase):
             rec = q.get(timeout=1)
             self.assertEqual("builtins.SyntaxError", rec['PYTHON_EXC'])
             self.assertEqual("Some Exception Msg", rec['PYTHON_EXC_MESSAGE'])
+            self.assertTrue(q.empty())
         finally:
             logger.removeHandler(self.handler)
 
