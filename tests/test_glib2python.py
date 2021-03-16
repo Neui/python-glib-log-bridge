@@ -113,6 +113,14 @@ class GLib2PythonWriterTest(unittest.TestCase):
         while not q.empty():
             q.get(timeout=1)
 
+    def test_invalid_message(self):
+        self._register(g2p.GLibToPythonLogger())
+        g_log(LOGGER_NAME, GLib.LogLevelFlags.LEVEL_WARNING, '', fields={
+            'MESSAGE': GLib.Variant('ay', b'\xFF')  # Not valid UTF-8
+        })
+        record = q.get(timeout=1)
+        self.assertEqual(record.message, '\uFFFD')  # At least still a string
+        self.assertTrue(q.empty())
 
 @unittest.skip("Doesn't work as expected yet...")
 class GLib2PythonHandlerTest(GLib2PythonWriterTest):
