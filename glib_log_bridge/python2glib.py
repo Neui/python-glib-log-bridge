@@ -118,12 +118,15 @@ _GLib_LogWriterFunc = Callable[[GLib.LogLevelFlags, GLib.LogField, Any],
 class PythonToGLibWriterHandler(PythonToGLibLoggerHandler):
     """
     Python logger handler that directly forwards to an glib logger writer
-    function. Example: PythonToGLibWriterHandler(GLib.log_writer_default)
+    function. Example::
+
+        PythonToGLibWriterHandler(GLib.log_writer_default)
 
     Note that there are pre-existing instances at:
-    - pythonToGLibWriterDefault (with GLib.log_writer_default)
-    - pythonToGLibWriterStandardStreams (with GLib.log_writer_standard_streams)
-    - pythonToGLibWriterJournald (with GLib.log_writer_journald)
+
+    - :py:data:`pythonToGLibWriterDefault` (with :py:func:`GLib.log_writer_default`)
+    - :py:data:`pythonToGLibWriterStandardStreams` (with :py:func:`GLib.log_writer_standard_streams`)
+    - :py:data:`pythonToGLibWriterJournald` (with :py:func:`GLib.log_writer_journald`)
     """
     def __init__(self, writer: _GLib_LogWriterFunc,
                  user_data: Any = None,
@@ -140,7 +143,7 @@ class PythonToGLibWriterHandler(PythonToGLibLoggerHandler):
 
     def _convert_fields(self, d):
         """
-        Convert a record fields to an array of GLib.LogField
+        Convert a record fields to an array of :py:class:`GLib.LogField`
         """
         fields = []
         for key, value in d:
@@ -162,14 +165,14 @@ class PythonToGLibWriterHandler(PythonToGLibLoggerHandler):
         return ret
 
 
-"""Forward to GLib.log_writer_default"""
+"""Forward to :py:func:`GLib.log_writer_default`"""
 pythonToGLibWriterDefault = \
     PythonToGLibWriterHandler(GLib.log_writer_default)
 
-"""Forward to GLib.log_writer_standard_streams"""
+"""Forward to :py:func:`GLib.log_writer_standard_streams`"""
 pythonToGLibWriterStandardStreams = \
     PythonToGLibWriterHandler(GLib.log_writer_standard_streams)
 
-"""Forward to GLib.log_writer_journald"""
+"""Forward to :py:func:`GLib.log_writer_journald`"""
 pythonToGLibWriterJournald = \
     PythonToGLibWriterHandler(GLib.log_writer_journald)

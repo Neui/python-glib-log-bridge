@@ -137,8 +137,9 @@ class GLibToPythonLogger:
                                   logfields_n: int,
                                   user_data) -> GLib.LogWriterOutput:
         """
-        The function GLib should call when writing. Used it with:
-        GLib.log_set_writer_func(obj.glibToPythonLogWriterFunc, None)
+        The function GLib should call when writing. Used it with::
+
+            GLib.log_set_writer_func(obj.glibToPythonLogWriterFunc, None)
         """
         try:
             if isinstance(logfields, dict):  # For the other wrapper
