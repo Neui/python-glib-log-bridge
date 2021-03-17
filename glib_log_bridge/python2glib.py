@@ -1,5 +1,5 @@
 import logging
-import uuid
+import ctypes
 from typing import Any, Dict, Optional, Callable, List
 # from collections.abc import Callable
 import gi
@@ -293,12 +293,22 @@ class PythonToGLibWriterHandler(PythonToGLibLoggerHandler):
         :returns: The converted fields.
         """
         log_fields: List[GLib.LogField] = []
-        for key, value in fields:
+        for key, value in fields.items():
             # TODO: Convert GLib Variants
-            length = len(value)
             if isinstance(value, str):
                 length = -1
-            log_field = GLib.LogField(key=key, length=length, value=value)
+                cvalue = ctypes.create_string_buffer(value.encode('utf-8'))
+            else:
+                if not isinstance(value, bytes):
+                    value = str(value).encode('utf-8')
+                length = len(value)
+                cvalue = ctypes.create_string_buffer(value, len(value))
+            log_field = GLib.LogField()
+            log_field.key = key
+            log_field.length = length
+            log_field.value = ctypes.addressof(cvalue)
+            # Keep cvalue buffer alive until after logging (using) it
+            setattr(log_field, '_p2g_value_ctypes', cvalue)
             log_fields.append(log_field)
         return log_fields
 
