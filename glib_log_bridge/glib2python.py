@@ -138,7 +138,7 @@ class GLibToPythonLogger:
         return logging.getLogger(self._get_logger_name(fields))
 
     def _get_code_location(self, fields: FieldsType) -> Tuple[Optional[str],
-                                                              Optional[str],
+                                                              int,
                                                               Optional[str]]:
         """
         Returns an tuple describing the code location.
@@ -148,9 +148,7 @@ class GLibToPythonLogger:
         path_name = fields.get('CODE_PATH', None)
         if isinstance(path_name, bytes):
             path_name = path_name.decode(errors='replace')
-        line_no = fields.get('CODE_LINE', None)
-        if line_no is not None:
-            line_no = str(int(line_no))
+        line_no = int(fields.get('CODE_LINE', -1))
         func_name = fields.get('CODE_FUNC', None)
         if isinstance(func_name, bytes):
             func_name = func_name.decode(errors='replace')
@@ -165,8 +163,8 @@ class GLibToPythonLogger:
         :py:func:`bytes.decode` it into a string, and replace invalid
         characters.
 
-        :param fields: The fields to make the decision from.
-        :returns: The message to be used.
+        :param fields: The fields to extract the code location info from.
+        :returns: The code path(/module name), line and function name.
         """
         message = fields.get('MESSAGE', '')
         if isinstance(message, bytes):
