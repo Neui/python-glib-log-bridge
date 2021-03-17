@@ -6,6 +6,8 @@ This library allows you to redirect either from the [python logger facility][pyt
 [python-logger]: https://docs.python.org/3/library/logging.html
 [glib-logger]: https://developer.gnome.org/glib/stable/glib-Message-Logging.html
 
+**NOTE: THIS IS STILL IN DEVELOPMENT! IT MIGHT NOT WORK CORRECTLY, AND THE INTERFACE CAN CHANGE!**
+
 Quick Usage
 -----------
 
