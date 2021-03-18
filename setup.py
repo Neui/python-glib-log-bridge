@@ -10,7 +10,7 @@ with open(readme_filename, "r") as f:
 
 
 setup(
-    name="glib-log-bridge-Neui",
+    name="glib-log-bridge",
     version="0.0.1",
     author="Neui",
     # author_email="author@example.com",
