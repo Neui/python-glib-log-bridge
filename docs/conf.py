@@ -135,7 +135,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'PythonGLibLogBridge.tex', 'Python GLib Log Bridge Documentation',
+    (master_doc, 'PythonGLibLogBridge.tex',
+     'Python GLib Log Bridge Documentation',
      'Neui', 'manual'),
 ]
 
@@ -182,7 +183,13 @@ epub_exclude_files = ['search.html']
 
 # -- Extension configuration -------------------------------------------------
 
-# -- Options for intersphinx extension ---------------------------------------
+try:
+    if os.environ.get('READTHEDOCS', 'False') == 'True':
+        import sphinx_rtd_theme
+        extensions.append('sphinx_rtd_theme')
+        html_theme = 'sphinx_rtd_theme'
+except ImportError:
+    pass
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
