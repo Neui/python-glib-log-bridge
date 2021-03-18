@@ -1,5 +1,7 @@
-Python GLib Log Bridge documentation
-====================================
+.. _README file:
+
+.. mdinclude:: ../README.md
+
 
 .. toctree::
    :caption: Table of Contents:
@@ -10,11 +12,3 @@ Python GLib Log Bridge documentation
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-.. _README file:
-
-README file
-===========
-
-.. mdinclude:: ../README.md
-
