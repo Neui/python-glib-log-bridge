@@ -255,9 +255,9 @@ class Logger:
                          )
         return record
 
-    def logFunc(self, log_domain: str,
-                log_level: GLib.LogLevelFlags,
-                message: str, user_data: Optional[Any]):
+    def logHandlerFunc(self, log_domain: str,
+                       log_level: GLib.LogLevelFlags,
+                       message: str, user_data: Optional[Any]):
         """
         The function GLib should call handling an entry the unstructured
         way.
@@ -268,7 +268,7 @@ class Logger:
         Example:
 
         >>> GLib.log_set_handler("domain", GLib.LogLevelFlags.LEVEL_WARNING,
-        >>>                      obj.logFunc, None)
+        >>>                      obj.logHandlerFunc, None)
 
         .. warning::
             Not tested yet, since you need to use ``g_log`` (or ``g_logv``),
