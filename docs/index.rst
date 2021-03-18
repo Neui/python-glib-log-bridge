@@ -4,7 +4,7 @@
 
 
 .. toctree::
-   :caption: Table of Contents:
+   :caption: Table of Contents
 
    usage
    api
