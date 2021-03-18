@@ -17,7 +17,7 @@ q: queue.Queue = queue.Queue()
 def queueLogWriterFunc(log_level: GLib.LogLevelFlags,
                        logfields, n_logfields: int,
                        user_data) -> GLib.LogWriterOutput:
-    fields = g2p.GLibToPythonLogger._fields_to_dict(None, logfields)
+    fields = g2p.Logger._fields_to_dict(None, logfields)
     q.put(fields, block=False, timeout=1)
     return GLib.LogWriterOutput.HANDLED
 
@@ -36,7 +36,7 @@ class Python2GLibTest(unittest.TestCase):
         blacklist_categories=('C'), blacklist_characters='\x00'),
         min_size=1))
     def test_basic(self, msg):
-        self.handler = p2g.PythonToGLibLoggerHandler()
+        self.handler = p2g.LoggerHandler()
         logger.addHandler(self.handler)
         try:
             logger.info(msg)
@@ -46,7 +46,7 @@ class Python2GLibTest(unittest.TestCase):
             logger.removeHandler(self.handler)
 
     def test_custom_fields(self):
-        self.handler = p2g.PythonToGLibLoggerHandler()
+        self.handler = p2g.LoggerHandler()
         logger.addHandler(self.handler)
         try:
             o = queue.Queue()
@@ -68,7 +68,7 @@ class Python2GLibTest(unittest.TestCase):
             logger.removeHandler(self.handler)
 
     def test_exception_fields(self):
-        self.handler = p2g.PythonToGLibLoggerHandler()
+        self.handler = p2g.LoggerHandler()
         logger.addHandler(self.handler)
         try:
             raise SyntaxError("Some Exception Msg")

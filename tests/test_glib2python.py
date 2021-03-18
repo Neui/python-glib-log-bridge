@@ -27,7 +27,7 @@ class GLib2PythonWriterTest(unittest.TestCase):
         logger.removeHandler(qhandler)
 
     def _register(self, l):
-        GLib.log_set_writer_func(l.glibToPythonLogWriterFunc, None)
+        GLib.log_set_writer_func(l.logWriterFunc, None)
 
     def _log(self, logger_name, flags, message, fields=None):
         f = {'MESSAGE': GLib.Variant('s', message)}
@@ -39,7 +39,7 @@ class GLib2PythonWriterTest(unittest.TestCase):
         blacklist_categories=('C'), blacklist_characters='\x00'),
         min_size=1))
     def test_basic(self, msg):
-        self._register(g2p.GLibToPythonLogger())
+        self._register(g2p.Logger())
         self._log(LOGGER_NAME, GLib.LogLevelFlags.LEVEL_WARNING, msg)
         record = q.get(timeout=1)
         self.assertEqual(record.message, msg)
@@ -53,7 +53,7 @@ class GLib2PythonWriterTest(unittest.TestCase):
         (GLib.LogLevelFlags.LEVEL_DEBUG, logging.DEBUG),
     ]))
     def test_loglevels(self, m):
-        self._register(g2p.GLibToPythonLogger())
+        self._register(g2p.Logger())
         glib_level, logging_level = m
         self._log(LOGGER_NAME, m[0], "some_message")
         self.assertEqual(m[1], q.get(timeout=1).levelno)
@@ -67,7 +67,7 @@ class GLib2PythonWriterTest(unittest.TestCase):
         (GLib.LogLevelFlags.LEVEL_DEBUG, logging.DEBUG),
     ]))
     def test_loglevels_priority(self, m):
-        self._register(g2p.GLibToPythonLogger(use_priority_field=False))
+        self._register(g2p.Logger(use_priority_field=False))
         self._log(LOGGER_NAME, m[0], "some_message")
         self.assertEqual(m[1], q.get(timeout=1).levelno)
 
@@ -76,7 +76,7 @@ class GLib2PythonWriterTest(unittest.TestCase):
                                        blacklist_characters='\x00'),
         min_size=1), min_size=1))
     def test_domain(self, domain):
-        self._register(g2p.GLibToPythonLogger())
+        self._register(g2p.Logger())
         level = GLib.LogLevelFlags.LEVEL_INFO
         domain = '-'.join(domain)
         logger = logging.getLogger(LOGGER_NAME + '.'
@@ -94,7 +94,7 @@ class GLib2PythonWriterTest(unittest.TestCase):
                                                   fullmatch=True),
                             min_size=1, max_size=5))
     def test_domain_prefix(self, domain):
-        self._register(g2p.GLibToPythonLogger(logger_prefix=LOGGER_NAME + '.'))
+        self._register(g2p.Logger(logger_prefix=LOGGER_NAME + '.'))
         level = GLib.LogLevelFlags.LEVEL_INFO
         domain = '-'.join(domain)
         logger = logging.getLogger(LOGGER_NAME + '.'
@@ -113,7 +113,7 @@ class GLib2PythonWriterTest(unittest.TestCase):
             q.get(timeout=1)
 
     def test_invalid_message(self):
-        self._register(g2p.GLibToPythonLogger())
+        self._register(g2p.Logger())
         self._log(LOGGER_NAME, GLib.LogLevelFlags.LEVEL_WARNING, '', fields={
             'MESSAGE': GLib.Variant('ay', b'\xFF')  # Not valid UTF-8
         })
@@ -134,7 +134,7 @@ class GLib2PythonHandlerTest(GLib2PythonWriterTest):
 
     def _register(self, l):
         GLib.log_set_handler(LOGGER_NAME, GLib.LogLevelFlags.LEVEL_MASK,
-                             l.glibToPythonLogFunc, None)
+                             l.logFunc, None)
 
 
 if __name__ == '__main__':

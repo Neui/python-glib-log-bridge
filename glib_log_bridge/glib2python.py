@@ -9,20 +9,20 @@ Fields = dict
 FieldsType = Dict[str, Any]
 
 
-class GLibToPythonLogger:
+class Logger:
     """
     Class that contains the state (and methods) used to
     accept logs from GLib and forward them to the python logging system.
 
     You need to pass the
-    :py:func:`GLibToPythonLogger.glibToPythonLogWriterFunc`
+    :py:func:`Logger.glibToPythonLogWriterFunc`
     to the :py:func:`GLib.log_set_writer_func`.
     The "user data" is ignored, but subclasses can take advantage of that if
     they somehow want to.
 
     Example usage:
 
-    >>> g2plog = glib2python.GLibToPythonLogger()
+    >>> g2plog = glib2python.Logger()
     >>> GLib.log_set_writer_func(g2plog.glibToPythonLogWriterFunc, None)
 
     You can create a subclass and overwrite the private methods if you need
@@ -31,12 +31,12 @@ class GLibToPythonLogger:
     .. NOTE: Copy-Pasted from the __init__ version
 
     :param logger_prefix: What it should put before the converted logger
-        name. Also see :py:data:`GLibToPythonLogger.logger_prefix`.
+        name. Also see :py:data:`Logger.logger_prefix`.
     :param logger_suffix: What it should put after the converted logger
-        name. Also see :py:data:`GLibToPythonLogger.logger_suffix`.
+        name. Also see :py:data:`Logger.logger_suffix`.
     :param use_priority_field: Force using the journald PRIORITY=-field
         rather than the log level GLib passes directly.
-        Also see :py:data:`GLibToPythonLogger.use_priority_field`.
+        Also see :py:data:`Logger.use_priority_field`.
     """
 
     logger_prefix: str = ''
@@ -58,12 +58,12 @@ class GLibToPythonLogger:
         Initialize itself by just setting the attributes.
 
         :param logger_prefix: What it should put before the converted logger
-            name. Also see :py:data:`GLibToPythonLogger.logger_prefix`.
+            name. Also see :py:data:`Logger.logger_prefix`.
         :param logger_suffix: What it should put after the converted logger
-            name. Also see :py:data:`GLibToPythonLogger.logger_suffix`.
+            name. Also see :py:data:`Logger.logger_suffix`.
         :param use_priority_field: Force using the journald PRIORITY=-field
             rather than the log level GLib passes directly.
-            Also see :py:data:`GLibToPythonLogger.use_priority_field`.
+            Also see :py:data:`Logger.use_priority_field`.
         """
         self.logger_prefix = logger_prefix
         self.logger_suffix = logger_suffix
@@ -114,9 +114,9 @@ class GLibToPythonLogger:
         By default this uses (and converts) the ``GLIB_DOMAIN`` field.
 
         The default implementation also uses
-        :py:data:`GLibToPythonLogger.logger_prefix`
+        :py:data:`Logger.logger_prefix`
         and
-        :py:data:`GLibToPythonLogger.logger_suffix`.
+        :py:data:`Logger.logger_suffix`.
 
         :param fields: The fields to make the decision from.
         :returns: The name of the logger to use.
@@ -255,20 +255,20 @@ class GLibToPythonLogger:
                          )
         return record
 
-    def glibToPythonLogFunc(self, log_domain: str,
-                            log_level: GLib.LogLevelFlags,
-                            message: str, user_data: Optional[Any]):
+    def logFunc(self, log_domain: str,
+                log_level: GLib.LogLevelFlags,
+                message: str, user_data: Optional[Any]):
         """
         The function GLib should call handling an entry the unstructured
         way.
         Pass this to :py:func:`GLib.log_set_handler`.
         Note that the default handler forwards to the structured version
         when one isn't registered, so please use
-        :py:func:`glibToPythonLogWriterFunc` instead.
+        :py:func:`logWriterFunc` instead.
         Example::
 
             GLib.log_set_handler("domain", GLib.LogLevelFlags.LEVEL_WARNING,
-                                 obj.glibToPythonLogFunc, None)
+                                 obj.logFunc, None)
 
         WARNING: Not tested yet.
 
@@ -284,22 +284,22 @@ class GLibToPythonLogger:
             'MESSAGE': message,
             'GLIB_DOMAIN': log_domain,
         }
-        self.glibToPythonLogWriterFunc(log_level, fields, len(fields),
-                                       user_data)
+        self.logWriterFunc(log_level, fields, len(fields),
+                           user_data)
 
-    def glibToPythonLogWriterFunc(self, log_level: GLib.LogLevelFlags,
-                                  logfields: Union[List[GLib.LogField],
-                                                   Dict[str, Any]],
-                                  logfields_n: int,
-                                  user_data: Optional[Any]
-                                  ) -> GLib.LogWriterOutput:
+    def logWriterFunc(self, log_level: GLib.LogLevelFlags,
+                      logfields: Union[List[GLib.LogField],
+                                       Dict[str, Any]],
+                      logfields_n: int,
+                      user_data: Optional[Any]
+                      ) -> GLib.LogWriterOutput:
         """
         The function GLib should call when writing.
         Pass this to :py:func:`GLib.log_set_writer_func`, which is used
         when doing structured logging.
         Example::
 
-            GLib.log_set_writer_func(obj.glibToPythonLogWriterFunc, None)
+            GLib.log_set_writer_func(obj.logWriterFunc, None)
 
         :param log_level: GLib version of the log level.
         :param logfields: Fields that the logger has.

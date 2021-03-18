@@ -15,15 +15,15 @@ Quick Usage
 ```python
 from gi.repository import GLib
 import glib_log_bridge.glib2python as glib2python
-g2plog = glib2python.GLibToPythonLogger()
-GLib.log_set_writer_func(g2plog.glibToPythonLogWriterFunc, None)
+g2plog = glib2python.Logger()
+GLib.log_set_writer_func(g2plog.logWriterFunc, None)
 ```
 
 ### Python → GLib
 ```python
 import logging
 import glib_log_bridge.python2glib as python2glib
-handler = python2glib.PythonToGLibLoggerHandler()
+handler = python2glib.LoggerHandler()
 logging.getLogger().addHandler(handler)
 # Logger to apply, logger.getLogger() does it for all messages
 ```

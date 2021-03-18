@@ -9,7 +9,7 @@ from gi.repository import GLib
 logger = logging.getLogger(__name__)
 
 
-class PythonToGLibLoggerHandler(logging.Handler):
+class LoggerHandler(logging.Handler):
     """
     Python logger handle that just forwards message records to the GLib logger.
 
@@ -20,13 +20,13 @@ class PythonToGLibLoggerHandler(logging.Handler):
 
     :param replace_module_char: What to replace the dots (logger namespace
         separator) with when converting.
-        Also see :py:data:`PythonToGLibLoggerHandler.replace_module_char`.
+        Also see :py:data:`LoggerHandler.replace_module_char`.
     :param log_domain_prefix: What it should put before the converted
         logger name.
-        Also see :py:data:`PythonToGLibLoggerHandler.log_domain_prefix`.
+        Also see :py:data:`LoggerHandler.log_domain_prefix`.
     :param log_domain_suffix: What it should put after the converted
         logger name.
-        Also see :py:data:`PythonToGLibLoggerHandler.log_domain_suffix`.
+        Also see :py:data:`LoggerHandler.log_domain_suffix`.
     """
 
     replace_module_char: str = '-'
@@ -49,13 +49,13 @@ class PythonToGLibLoggerHandler(logging.Handler):
 
         :param replace_module_char: What to replace the dots (logger namespace
             separator) with when converting.
-            Also see :py:data:`PythonToGLibLoggerHandler.replace_module_char`.
+            Also see :py:data:`LoggerHandler.replace_module_char`.
         :param log_domain_prefix: What it should put before the converted
             logger name.
-            Also see :py:data:`PythonToGLibLoggerHandler.log_domain_prefix`.
+            Also see :py:data:`LoggerHandler.log_domain_prefix`.
         :param log_domain_suffix: What it should put after the converted
             logger name.
-            Also see :py:data:`PythonToGLibLoggerHandler.log_domain_suffix`.
+            Also see :py:data:`LoggerHandler.log_domain_suffix`.
         """
         super().__init__(level)
         self.replace_module_char = replace_module_char
@@ -83,7 +83,7 @@ class PythonToGLibLoggerHandler(logging.Handler):
         If no mapping exists, use the specified default value.
 
         The default implementation will use the
-        :py:data:`PythonToGLibLoggerHandler._level_to_glib_map`
+        :py:data:`LoggerHandler._level_to_glib_map`
         map.
         """
         for key in sorted(self._level_to_glib_map, reverse=True):
@@ -95,9 +95,9 @@ class PythonToGLibLoggerHandler(logging.Handler):
         """
         Returns the log domain for the specified record.
         The default implementation takes
-        :py:data:`PythonToGLibLoggerHandler.log_domain_prefix`
+        :py:data:`LoggerHandler.log_domain_prefix`
         and
-        :py:data:`PythonToGLibLoggerHandler.log_domain_prefix`
+        :py:data:`LoggerHandler.log_domain_prefix`
         into consideration.
 
         :param record: The record to retrieve (and convert) the log domain
@@ -229,20 +229,20 @@ _GLib_LogWriterFunc = Callable[[GLib.LogLevelFlags, GLib.LogField, Any],
                                GLib.LogWriterOutput]
 
 
-class PythonToGLibWriterHandler(PythonToGLibLoggerHandler):
+class GLibWriterHandler(LoggerHandler):
     """
     Python logger handler that directly forwards to an GLib logger writer
     function. Example::
 
-        obj = PythonToGLibWriterHandler(GLib.log_writer_default)
+        obj = GLibWriterHandler(GLib.log_writer_default)
 
     Note that there are pre-existing instances at:
 
-    - :py:data:`pythonToGLibWriterDefault`
+    - :py:data:`GLibWriterHandlerDefault`
         (uses :py:func:`GLib.log_writer_default`)
-    - :py:data:`pythonToGLibWriterStandardStreams`
+    - :py:data:`GLibWriterHandlerStandardStreams`
         (uses :py:func:`GLib.log_writer_standard_streams`)
-    - :py:data:`pythonToGLibWriterJournald`
+    - :py:data:`GLibWriterHandlerJournald`
         (uses :py:func:`GLib.log_writer_journald`)
 
     Note that since this subclasses :py:class:`logging.Handler`, view
@@ -268,7 +268,7 @@ class PythonToGLibWriterHandler(PythonToGLibLoggerHandler):
         """
         Return fields to use based on the given log record.
 
-        See :py:func:`PythonToGLibLoggerHandler._get_fields` for more
+        See :py:func:`LoggerHandler._get_fields` for more
         information.
 
         This implementation will also set ``GLIB_DOMAIN`` when not set.
@@ -338,21 +338,19 @@ class PythonToGLibWriterHandler(PythonToGLibLoggerHandler):
         return ret
 
 
-pythonToGLibWriterDefault = \
-    PythonToGLibWriterHandler(GLib.log_writer_default)
+GLibWriterHandlerDefault = GLibWriterHandler(GLib.log_writer_default)
 """
 Python Logger Handler to forward to :py:func:`GLib.log_writer_default`.
 """
 
-pythonToGLibWriterStandardStreams = \
-    PythonToGLibWriterHandler(GLib.log_writer_standard_streams)
+GLibWriterHandlerStandardStreams = \
+    GLibWriterHandler(GLib.log_writer_standard_streams)
 """
 Python Logger Handler to forward to
 :py:func:`GLib.log_writer_standard_streams`.
 """
 
-pythonToGLibWriterJournald = \
-    PythonToGLibWriterHandler(GLib.log_writer_journald)
+GLibWriterHandlerJournald = GLibWriterHandler(GLib.log_writer_journald)
 """
 Python Logger Handler to forward to :py:func:`GLib.log_writer_journald`.
 """
