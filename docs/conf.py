@@ -183,13 +183,9 @@ epub_exclude_files = ['search.html']
 
 # -- Extension configuration -------------------------------------------------
 
-try:
-    if os.environ.get('READTHEDOCS', 'False') == 'True':
-        import sphinx_rtd_theme
-        extensions.append('sphinx_rtd_theme')
-        html_theme = 'sphinx_rtd_theme'
-except ImportError:
-    pass
+if os.environ.get('READTHEDOCS') == 'True':
+    print("Building for ReadTheDocs, enabling their theme")
+    html_theme = 'default'
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
