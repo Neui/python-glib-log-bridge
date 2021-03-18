@@ -265,12 +265,16 @@ class Logger:
         Note that the default handler forwards to the structured version
         when one isn't registered, so please use
         :py:func:`logWriterFunc` instead.
-        Example::
+        Example:
 
-            GLib.log_set_handler("domain", GLib.LogLevelFlags.LEVEL_WARNING,
-                                 obj.logFunc, None)
+        >>> GLib.log_set_handler("domain", GLib.LogLevelFlags.LEVEL_WARNING,
+        >>>                      obj.logFunc, None)
 
-        WARNING: Not tested yet.
+        .. warning::
+            Not tested yet, since you need to use ``g_log`` (or ``g_logv``),
+            but PyGObject doesn't expose it.
+            The default handler uses the writer anyway, so for most cases
+            you don't need to deal with this.
 
         :param log_domain: In what domain it was logged to.
         :param log_level: What log level is being used.
@@ -297,9 +301,9 @@ class Logger:
         The function GLib should call when writing.
         Pass this to :py:func:`GLib.log_set_writer_func`, which is used
         when doing structured logging.
-        Example::
+        Example:
 
-            GLib.log_set_writer_func(obj.logWriterFunc, None)
+        >>> GLib.log_set_writer_func(obj.logWriterFunc, None)
 
         :param log_level: GLib version of the log level.
         :param logfields: Fields that the logger has.

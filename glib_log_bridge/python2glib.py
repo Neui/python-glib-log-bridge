@@ -232,17 +232,17 @@ _GLib_LogWriterFunc = Callable[[GLib.LogLevelFlags, GLib.LogField, Any],
 class GLibWriterHandler(LoggerHandler):
     """
     Python logger handler that directly forwards to an GLib logger writer
-    function. Example::
+    function. Example:
 
-        obj = GLibWriterHandler(GLib.log_writer_default)
+    >>> obj = GLibWriterHandler(GLib.log_writer_default)
 
     Note that there are pre-existing instances at:
 
-    - :py:data:`GLibWriterHandlerDefault`
+    - :py:data:`glibWriterHandlerDefault`
         (uses :py:func:`GLib.log_writer_default`)
-    - :py:data:`GLibWriterHandlerStandardStreams`
+    - :py:data:`glibWriterHandlerStandardStreams`
         (uses :py:func:`GLib.log_writer_standard_streams`)
-    - :py:data:`GLibWriterHandlerJournald`
+    - :py:data:`glibWriterHandlerJournald`
         (uses :py:func:`GLib.log_writer_journald`)
 
     Note that since this subclasses :py:class:`logging.Handler`, view
@@ -338,19 +338,91 @@ class GLibWriterHandler(LoggerHandler):
         return ret
 
 
-GLibWriterHandlerDefault = GLibWriterHandler(GLib.log_writer_default)
+glibWriterHandlerDefault = GLibWriterHandler(GLib.log_writer_default)
 """
 Python Logger Handler to forward to :py:func:`GLib.log_writer_default`.
 """
 
-GLibWriterHandlerStandardStreams = \
+glibWriterHandlerStandardStreams = \
     GLibWriterHandler(GLib.log_writer_standard_streams)
 """
 Python Logger Handler to forward to
 :py:func:`GLib.log_writer_standard_streams`.
 """
 
-GLibWriterHandlerJournald = GLibWriterHandler(GLib.log_writer_journald)
+glibWriterHandlerJournald = GLibWriterHandler(GLib.log_writer_journald)
 """
 Python Logger Handler to forward to :py:func:`GLib.log_writer_journald`.
+"""
+
+
+class GLibLogHandler(LoggerHandler):
+    """
+    Python logger handler that directly forwards to an GLib old-style
+    log handler. Example:
+
+    >>> obj = GLibLogHandler(GLib.log_default_handler)
+
+    .. warning::
+        Uses the old-style GLib log API, so only the message, log domain and
+        level are used, other fields are silently dropped.
+        Use :py:class:`GLibWriterHandler` instead.
+
+    Note that there is an pre-existing instance at:
+
+    - :py:data:`glibLogHandlerDefault`
+        (uses :py:func:`GLib.log_default_handler`)
+
+    Note that since this subclasses :py:class:`logging.Handler`, view
+    their documentation for more information, such as filters and so on.
+    """
+    def __init__(self, writer: _GLib_LogWriterFunc,
+                 user_data: Any = None,
+                 level=logging.NOTSET,
+                 **kwargs):
+        """
+        Initializes the instance, basically setting the formatter to ``None``
+        and the filter list to empty.
+
+        :param handler: The log handler function to forward to.
+        :param user_data: Additional data to forward to the handler function.
+        """
+        super().__init__(level, **kwargs)
+        self.handler: _GLib_LogWriterFunc = writer
+        self.user_data: Any = user_data
+
+    def _get_message(self, record: logging.LogRecord) -> str:
+        """
+        Returns the message to pass to GLib for the specified record.
+
+        :param record: The record to retrieve the message from.
+        :returns: The message to pass to GLib.
+        """
+        return record.message
+
+    def emit(self, record):
+        """
+        Log the specified record, by converting and forwarding it to the
+        specified GLib Log Writer Function.
+
+        Normally, you wouldn't use this directly but rather implicitly via
+        Pythons logging system.
+
+        :param record: The record to forward to GLib.
+        """
+        log_domain = self._get_log_domain(record)
+        log_level = self._level_to_glib(record.levelno)
+        message = self._get_message(record)
+        self.handler(log_domain, log_level, message, self.user_data)
+
+
+glibLogHandlerDefault = GLibLogHandler(GLib.log_default_handler)
+"""
+Python Logger Handler to forward to :py:func:`GLib.log_default_handler`.
+
+.. warning::
+    Uses the old-style GLib log API, so only the message, log domain and level
+    are used, other fields are silently dropped.
+    Use :py:class:`GLibWriterHandler` or one of their pre-existing instances
+    instead.
 """
