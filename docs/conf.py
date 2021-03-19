@@ -205,7 +205,7 @@ autodoc_typehints = 'description'
 autodoc_default_options = {
     # 'members': '__all__',
     'undoc-members': True,
-    'special-members': '__init__',
+    'special-members': '__init__, __call__',
     # 'inherited-members': True,
 }
 
