@@ -4,6 +4,7 @@ from typing import Any, Union, Optional, List, Tuple, Dict, Iterable
 import gi
 from gi.repository import GLib
 import os
+import functools
 
 
 Fields = dict
@@ -255,6 +256,35 @@ class Logger:
                          glib_fields=fields
                          )
         return record
+
+    @functools.singledispatchmethod
+    def __call__(self):
+        """
+        Forward either to :py:func:`.logHandlerFunc` or
+        :py:func:`.logWriterFunc`, depending what parameters are given.
+
+        :raises NotImplementedError: For when type does not matches
+                                     :py:func:`.logHandlerFunc` or
+                                     :py:func:`.logWriterFunc`.
+        """
+        raise NotImplementedError
+
+    @__call__.register
+    def __call__logHandlerFunc(self, log_domain: str,
+                               log_level: GLib.LogLevelFlags,
+                               message: str, user_data: Optional[Any]):
+        """Forward to :py:func:`.logHandlerFunc`"""
+        return self.logHandlerFunc(log_domain, log_level, message, user_data)
+
+    @__call__.register
+    def __call__logWriterFunc(self, log_level: GLib.LogLevelFlags,
+                              logfields: Union[List[GLib.LogField],
+                                               Dict[str, Any]],
+                              logfields_n: int,
+                              user_data: Optional[Any]
+                              ) -> GLib.LogWriterOutput:
+        """Forward to :py:func:`.logWriterFunc`"""
+        return self.logWriterFunc(log_level, logfields, logfields_n, user_data)
 
     def logHandlerFunc(self, log_domain: str,
                        log_level: GLib.LogLevelFlags,
