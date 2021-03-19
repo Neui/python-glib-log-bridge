@@ -1,8 +1,9 @@
 import logging
 import ctypes
-from typing import Any, Union, Optional, List, Tuple, Dict
+from typing import Any, Union, Optional, List, Tuple, Dict, Iterable
 import gi
 from gi.repository import GLib
+import os
 
 
 Fields = dict
@@ -15,7 +16,7 @@ class Logger:
     accept logs from GLib and forward them to the python logging system.
 
     You need to pass the
-    :py:func:`Logger.glibToPythonLogWriterFunc`
+    :py:func:`Logger.logWriterFunc`
     to the :py:func:`GLib.log_set_writer_func`.
     The "user data" is ignored, but subclasses can take advantage of that if
     they somehow want to.
@@ -23,7 +24,7 @@ class Logger:
     Example usage:
 
     >>> g2plog = glib2python.Logger()
-    >>> GLib.log_set_writer_func(g2plog.glibToPythonLogWriterFunc, None)
+    >>> GLib.log_set_writer_func(g2plog.logWriterFunc, None)
 
     You can create a subclass and overwrite the private methods if you need
     more control.
@@ -326,3 +327,87 @@ class Logger:
         except Exception:
             return GLib.LogWriterOutput.UNHANDLED
         return GLib.LogWriterOutput.HANDLED
+
+
+class FilterGLibMessagesDebug(logging.Filter):
+    """
+    Filter that uses ``G_MESSAGES_DEBUG``, which in GLib by default is being
+    used whenever it should output Debug messages.
+
+    Basically, if the log level of a record is Debug and their
+    domain/logger name does not appear in ``G_MESSAGES_DEBUG``,
+    it will be filtered out.
+    Otherwise (non-Debug or appears in ``G_MESSAGES_DEBUG``), it'll allow
+    the message to pass.
+
+    An pre-existing instance is at :py:data:`filterGLibMessagesDebug`.
+
+    .. warning::
+        Filters don't get propagated when applied to a logger
+        (so filters for the root logger get ignored by the ``"GLib"``-logger).
+        Because of that, apply it to the handler instead.
+    """
+
+    def __init__(self, g_messages_debug: Optional[List[str]] = None):
+        """
+        Initialize the instance.
+
+        :param g_message_debug: The already splitted and converted
+                               ``G_MESSAGES_DEBUG``.
+        """
+        super().__init__()
+        if g_messages_debug is None:
+            self.g_messages_debug = self._default_g_messages_debug()
+        else:
+            self.g_messages_debug = g_messages_debug
+        self.all = 'all' in self.g_messages_debug
+
+    def _default_g_messages_debug(self) -> List[str]:
+        """
+        Returns the default splitted and converted ``G_MESSAGES_DEBUG``.
+        It is split by spaces, and converted by replacing ``-`` to ``.``.
+
+        :returns: The default splitted and converted ``G_MESSAGES_DEBUG``.
+        """
+        glib_domains = os.environ.get('G_MESSAGES_DEBUG', '').split(' ')
+        return [d.replace('-', '.') for d in glib_domains]
+
+    def _get_domain_name(self, record: logging.LogRecord) -> str:
+        """
+        Returns the domain name from the specified record.
+        Used to check whenever this should filter it out or not.
+
+        :param record: The record to extract the domain name from.
+        :returns: The domain name used to check whenever it should filter or
+                  not.
+        """
+        return record.name
+
+    def filter(self, record: logging.LogRecord) -> int:
+        """
+        Is the specified record to be logged?
+
+        :param record: The record to decide on.
+        :returns: ``0`` to drop it, ``1`` to continue logging.
+        """
+        if not record.levelno == logging.DEBUG or self.all:
+            return 1
+        domain_name = self._get_domain_name(record)
+        for line in self.g_messages_debug:
+            if line in domain_name:
+                # Not domain_name in line because
+                # line='GLib' in domain_name='GLib.GIO' should be possible
+                return 1
+        return 0
+
+
+filterGLibMessagesDebug = FilterGLibMessagesDebug()
+"""
+The default filter that uses ``G_MESSAGES_DEBUG`` to filter that was set at the
+time of importing.
+
+.. warning::
+    Filters don't get propagated when applied to a logger
+    (so filters for the root logger get ignored by the ``"GLib"``-logger).
+    Because of that, apply it to the handler instead.
+"""
