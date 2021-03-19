@@ -383,6 +383,78 @@ class FilterGLibMessagesDebug(logging.Filter):
         """
         return record.name
 
+    def filter_logger_name(self, logger_name: str) -> bool:
+        """
+        Returns whenever the specified logger name would be filtered out
+        or not.
+        This can be used to whenever it should enable debug logging.
+
+        :param logger_name: Name of the logger to check.
+        :returns: ``True`` whenever to filter out messages coming from it,
+                  ``False`` to pass through.
+        """
+        if self.all:
+            return True
+        for line in self.g_messages_debug:
+            if line in logger_name:
+                # Not domain_name in line because
+                # line='GLib' in domain_name='GLib.GIO' should be possible
+                return True
+        return False
+
+    def _get_loggers(self, root: logging.Logger) -> List[logging.Logger]:
+        """
+        Returns the appropriate loggers, starting from the root logger,
+        to apply the filter and level on.
+        """
+        if self.all:
+            return [root]
+        l: List[logging.Logger] = []
+        for logger_name in self.g_messages_debug:
+            l.append(root.getChild(logger_name))
+        return l
+
+    def register_loggers(self, root: logging.Logger = logging.getLogger(),
+                         set_level: Optional[int] = logging.DEBUG,
+                         register: bool = True
+                         ) -> List[logging.Logger]:
+        """
+        Register the filter and set the log level appropriately.
+
+        :param root: From which logger to begin
+        :param set_level: The log level to set, if not ``None``.
+        :param register: Whenever to register the filter.
+        :returns: The affected loggers.
+        """
+        loggers = self._get_loggers(root)
+        for logger in loggers:
+            if register:
+                logger.removeFilter(self)
+                logger.addFilter(self)
+            if set_level is not None:
+                logger.setLevel(set_level)
+        return loggers
+
+    def unregister_loggers(self, root: logging.Logger = logging.getLogger(),
+                           set_level: Optional[int] = logging.NOTSET,
+                           unregister: bool = True
+                           ) -> List[logging.Logger]:
+        """
+        Unregister the filter and set the log level appropriately.
+
+        :param root: From which logger to begin
+        :param set_level: The log level to set, if not ``None``.
+        :param unregister: Whenever to unregister the filter.
+        :returns: The affected loggers.
+        """
+        loggers = self._get_loggers(root)
+        for logger in loggers:
+            if unregister:
+                logger.removeFilter(self)
+            if set_level is not None:
+                logger.setLevel(set_level)
+        return loggers
+
     def filter(self, record: logging.LogRecord) -> int:
         """
         Is the specified record to be logged?
