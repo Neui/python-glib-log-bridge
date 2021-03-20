@@ -11,6 +11,9 @@ This library allows you to redirect either from the [python logger facility][pyt
 Quick Usage
 -----------
 
+Look at the documentation for more information, more examples and
+the API reference.
+
 ### GLib → Python
 ```python
 from gi.repository import GLib

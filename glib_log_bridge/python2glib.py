@@ -448,6 +448,9 @@ Python Logger Handler to forward to :py:func:`GLib.log_writer_journald`.
 """
 
 
+_GLib_LogFunc = Callable[[str, GLib.LogLevelFlags, str, Any], Any]
+
+
 class GLibLogHandler(LoggerHandler):
     """
     Python logger handler that directly forwards to an GLib old-style
@@ -468,7 +471,7 @@ class GLibLogHandler(LoggerHandler):
     Note that since this subclasses :py:class:`logging.Handler`, view
     their documentation for more information, such as filters and so on.
     """
-    def __init__(self, writer: _GLib_LogWriterFunc,
+    def __init__(self, writer: _GLib_LogFunc,
                  user_data: Any = None,
                  level=logging.NOTSET,
                  **kwargs):
@@ -480,7 +483,7 @@ class GLibLogHandler(LoggerHandler):
         :param user_data: Additional data to forward to the handler function.
         """
         super().__init__(level, **kwargs)
-        self.handler: _GLib_LogWriterFunc = writer
+        self.handler: _GLib_LogFunc = writer
         self.user_data: Any = user_data
 
     def _get_message(self, record: logging.LogRecord) -> str:
