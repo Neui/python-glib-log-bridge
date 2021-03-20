@@ -108,6 +108,108 @@ class LoggerHandler(logging.Handler):
             + record.name.replace('.', self.replace_module_char) \
             + self.log_domain_suffix
 
+    def _get_fields_exception(self, record: logging.LogRecord,
+                              fields: Optional[Dict[str, Any]]
+                              ) -> Dict[str, Any]:
+        """
+        Insert and return fields related to the current exception based on the
+        given log record, if they contain them.
+
+        The default implementation will insert the following keys:
+
+        * ``PYTHON_EXC``: Exception type with complete name
+        * ``PYTHON_EXC_MESSAGE``: Stringify exception message
+
+        They won't be inserted when no exception is available.
+
+        :param record: The record to convert into a suitable :py:class:`dict`.
+        :param fields: The existing fields to update.
+                       If ``None``, a new one is created and returned.
+        :returns: Converted :py:class:`dict` from the specified record.
+        """
+        if fields is None:
+            fields = {}
+        if record.exc_info is not None:
+            exc_type, exc, exc_tb = record.exc_info
+            if exc_type is None:
+                exc_type = type(exc)
+            type_name = exc_type.__module__ + '.' + exc_type.__qualname__
+            fields['PYTHON_EXC'] = type_name
+            fields['PYTHON_EXC_MESSAGE'] = str(exc)
+        return fields
+
+    def _get_fields_metadata(self, record: logging.LogRecord,
+                             fields: Optional[Dict[str, Any]]
+                             ) -> Dict[str, Any]:
+        """
+        Return basic essential fields to use based on the given log record.
+
+        The default implementation will insert the following keys:
+
+        * ``PYTHON_MESSAGE``: The unformatted message
+        * ``PYTHON_MODULE``: What module the log was emitted from
+        * ``PYTHON_LOGGER``: To what logger name it was supposed to log to
+        * ``PYTHON_TNAME``: Thread Name
+        * ``PYTHON_TID``: Thread ID
+
+        :param record: The record to convert into a suitable :py:class:`dict`.
+        :param fields: The existing fields to update.
+                       If ``None``, a new one is created and returned.
+        :returns: Converted :py:class:`dict` from the specified record.
+        """
+        if fields is None:
+            fields = {}
+        fields['PYTHON_MESSAGE'] = record.getMessage()
+        fields['PYTHON_MODULE'] = record.module
+        fields['PYTHON_LOGGER'] = record.name
+        fields['PYTHON_TNAME'] = record.threadName
+        fields['PYTHON_TID'] = record.thread
+        return fields
+
+    def _get_fields_record(self, record: logging.LogRecord,
+                           fields: Optional[Dict[str, Any]]
+                           ) -> Dict[str, Any]:
+        """
+        Insert and return additional fields specified in the given log record
+        ``glib_fields`` attribute of the record, if it exists.
+
+        :param record: The record to convert into a suitable :py:class:`dict`.
+        :param fields: The existing fields to update.
+                       If ``None``, a new one is created and returned.
+        :returns: Converted :py:class:`dict` from the specified record.
+        """
+        if fields is None:
+            fields = {}
+        if hasattr(record, 'glib_fields') and \
+                isinstance(getattr(record, 'glib_fields', None), dict):
+            fields.update(getattr(record, 'glib_fields', {}))
+        return fields
+
+    def _get_fields_basic(self, record: logging.LogRecord,
+                          fields: Optional[Dict[str, Any]]
+                          ) -> Dict[str, Any]:
+        """
+        Insert and return basic essential fields to use based on the given
+        log record.
+
+        The default implementation will insert the following keys:
+
+        * ``MESSAGE``: The formatted message
+        * ``CODE_FUNC``, ``CODE_FILE``, ``CODE_LINE``: Where it logged
+
+        :param record: The record to convert into a suitable :py:class:`dict`.
+        :param fields: The existing fields to update.
+                       If ``None``, a new one is created and returned.
+        :returns: Converted :py:class:`dict` from the specified record.
+        """
+        if fields is None:
+            fields = {}
+        fields['MESSAGE'] = self.format(record)
+        fields['CODE_FUNC'] = record.funcName
+        fields['CODE_FILE'] = record.pathname
+        fields['CODE_LINE'] = record.lineno
+        return fields
+
     def _get_fields(self, record: logging.LogRecord,
                     **kwargs) -> Dict[str, Any]:
         """
@@ -135,6 +237,12 @@ class LoggerHandler(logging.Handler):
 
         Subclasses can override this function to insert their own values
         and such.
+        They can use the lower-scoped methods for more control:
+
+        * :py:func:`LoggerHandler._get_fields_basic`
+        * :py:func:`LoggerHandler._get_fields_metadata`
+        * :py:func:`LoggerHandler._get_fields_exception`
+        * :py:func:`LoggerHandler._get_fields_record`
 
         :param record: The record to convert into a suitable :py:class:`dict`.
         :param update_from_record: Extend it with ``record.glib_fields``,
@@ -143,30 +251,14 @@ class LoggerHandler(logging.Handler):
         :type update_from_record: bool
         :returns: Converted :py:class:`dict` from the specified record.
         """
-        fields = {
-            'MESSAGE': self.format(record),
-            'CODE_FUNC': record.funcName,
-            'CODE_FILE': record.pathname,
-            'CODE_LINE': record.lineno,
-            'PYTHON_MESSAGE': record.getMessage(),
-            'PYTHON_MODULE': record.module,
-            'PYTHON_LOGGER': record.name,
-            'PYTHON_TNAME': record.threadName,
-            'PYTHON_TID': record.thread,
-        }
+        fields: Dict[str, Any] = {}
 
-        if record.exc_info is not None:
-            exc_type, exc, exc_tb = record.exc_info
-            if exc_type is None:
-                exc_type = type(exc)
-            type_name = exc_type.__module__ + '.' + exc_type.__qualname__
-            fields['PYTHON_EXC'] = type_name
-            fields['PYTHON_EXC_MESSAGE'] = str(exc)
+        self._get_fields_basic(record, fields)
+        self._get_fields_metadata(record, fields)
+        self._get_fields_exception(record, fields)
 
-        if kwargs.get('update_from_record', True) and \
-                hasattr(record, 'glib_fields') and \
-                isinstance(getattr(record, 'glib_fields', None), dict):
-            fields.update(getattr(record, 'glib_fields', {}))
+        if kwargs.get('update_from_record', True):
+            self._get_fields_record(record, fields)
 
         return fields
 
